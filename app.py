@@ -1,6 +1,7 @@
 import os
 from flask import Flask, request, send_from_directory
-import base64, requests
+import base64
+import requests
 
 app = Flask(__name__)
 
@@ -30,3 +31,8 @@ def send():
     except Exception as e:
         print("ERROR:", e)
         return "ERROR", 500
+
+# 🔥 THIS PART WAS MISSING
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
