@@ -1,3 +1,7 @@
+flask
+requests
+gunicorn
 git add requirements.txt
 git commit -m "Add gunicorn"
 git push
+
